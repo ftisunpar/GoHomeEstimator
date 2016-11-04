@@ -11,6 +11,7 @@
 	<script href="js/jquery-2.2.4.min.js" type='text/javascript'></script>
 	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlvLaANZIHRnzPoz6TFpkkjb1V9g4Lsi8&amp;libraries=places"
     async defer></script>
+	<script href="js/Chart.js" type='text/javascript'></script>
 	
   </head>
 
@@ -22,19 +23,19 @@
 		<!-- end of header -->
 		<!-- content -->
 		<div class="modal-body">
-		<form>
+		<!--<form>-->
 			<table>
 				<tr>
 					<td><label>Work: </label></td>
 					<td><input value="Jl. Ciumbuleuit No.94, Bandung" id="workAddress" class="controls" type="text" name="work" placeholder="input your work address"></td>
-					<td rowspan="9" width="50%"><div id="grafik"></div></td>
+					<td><canvas id="grafik" width="600" height="400"></canvas></td>
 				</tr>
 				<tr>
 					<td><label>Home: </label></td>
-					<td><input id="homeAddress" class="controls" type="text" name="home" placeholder="input your home address"></td>
+					<td><input value="Jl. Batununggal Indah I, Bandung City, West Java, Indonesia" id="homeAddress" class="controls" type="text" name="home" placeholder="input your home address"></td>
 				</tr>
 				<tr>
-					<td><button onclick="calcRoute();" name="calculate">Calculate</button></td>
+					<td></td><td style="text-align:center"><button class="btn-primary" onClick="calcRouteE();" name="calculate">Calculate</button></td>
 				</tr>
 				<tr rowspan="2">
 					<td colspan="2">Jalan pulang memerlukan: 
@@ -48,15 +49,17 @@
 				</tr>
 				<tr>
 					<td colspan="2">Terakhir update 
-						<div id="lastUpdate">12:00</div>
+						<div id="lastUpdate">-</div>
 					</td>
 				</tr>
 			</table>
-		</form>
+		<!--</form>-->
 		
 		</div>
 		<!-- end of content -->
 
+		
+	<script href="js/Chart.js" type='text/javascript'></script>
 	<script type="text/javascript">	
 		var directionsService;
 		var x = document.getElementById('waktu');
@@ -110,7 +113,7 @@
 			});
 		}
 		
-		function calcRoute(){
+		function calcRouteE(){
 			var melalui = "";
 			var jarak = 0;
 			var durasi = "";
@@ -127,11 +130,11 @@
 				trafficModel: 'optimistic',
 			  }
 			};
-			
+			var durasiTemp;
 			directionsService.route(request, function(response, status) {
 				console.log(response);
 				if (status == "OK") {
-					var durasiTemp = response.routes[0].legs[0].duration.text.split(" ");
+					durasiTemp = response.routes[0].legs[0].duration.text.split(" ");
 					for(i = 1; i < durasiTemp.length; i+=2){
 						if(durasiTemp[i] == "day" || durasiTemp[i] == "days"){
 							durasi += durasiTemp[i-1] + " Hari ";
@@ -181,9 +184,64 @@
 					
 				}
 			});
+			setInterval(function(){ calcRouteE(); }, 300000);
+			
+			var now = new Date();
+			var pretty = [
+			  now.getFullYear(),
+			  '-',
+			  now.getMonth() + 1,
+			  '-',
+			  now.getDate(),
+			  ' ',
+			  now.getHours(),
+			  ':',
+			  now.getMinutes(),
+			  ':',
+			  now.getSeconds()
+			].join('');
+			z.innerHTML = pretty;
 			
 		}
 
+		var myChart = require('js/Chart.js');
+			var ctx = document.getElementById("grafik");
+			var myChart = new Chart(ctx, {
+				type: 'bar',
+				data: {
+					labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+					datasets: [{
+						label: '# of Votes',
+						data: [12, 19, 3, 5, 2, 3],
+						backgroundColor: [
+							'rgba(255, 99, 132, 0.2)',
+							'rgba(54, 162, 235, 0.2)',
+							'rgba(255, 206, 86, 0.2)',
+							'rgba(75, 192, 192, 0.2)',
+							'rgba(153, 102, 255, 0.2)',
+							'rgba(255, 159, 64, 0.2)'
+						],
+						borderColor: [
+							'rgba(255,99,132,1)',
+							'rgba(54, 162, 235, 1)',
+							'rgba(255, 206, 86, 1)',
+							'rgba(75, 192, 192, 1)',
+							'rgba(153, 102, 255, 1)',
+							'rgba(255, 159, 64, 1)'
+						],
+						borderWidth: 1
+					}]
+				},
+				options: {
+					scales: {
+						yAxes: [{
+							ticks: {
+								beginAtZero:true
+							}
+						}]
+					}
+				}
+			});
 	</script>
     <!-- footer -->
     <div class="modal-footer">
