@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Go Home Estimator</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link href="css/bootstrap.css" rel='stylesheet' type='text/css'>
+	<link href="css/bootstrap.min.css" rel='stylesheet' type='text/css'>
+	<link href="css/style.css" rel='stylesheet' type='text/css'>
+	<script href="js/jquery-2.2.4.js" type='text/javascript'></script>
+	<script href="js/jquery-2.2.4.min.js" type='text/javascript'></script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAlvLaANZIHRnzPoz6TFpkkjb1V9g4Lsi8&amp;libraries=places"
+    async defer></script>
+	
+  </head>
+
+  <body onload="initialize()">
+		<!-- header -->
+		<div class="modal-header" style="text-align:center">
+			<h1><b>Go Home Estimator</b></h1>
+		</div>
+		<!-- end of header -->
+		<!-- content -->
+		<div class="modal-body">
+		<form>
+			<table>
+				<tr>
+					<td><label>Work: </label></td>
+					<td><input value="Jl. Ciumbuleuit No.94, Bandung" id="workAddress" class="controls" type="text" name="work" placeholder="input your work address"></td>
+					<td rowspan="9" width="50%"><div id="grafik"></div></td>
+				</tr>
+				<tr>
+					<td><label>Home: </label></td>
+					<td><input id="homeAddress" class="controls" type="text" name="home" placeholder="input your home address"></td>
+				</tr>
+				<tr>
+					<td><button onclick="calcRoute();" name="calculate">Calculate</button></td>
+				</tr>
+				<tr rowspan="2">
+					<td colspan="2">Jalan pulang memerlukan: 
+						<div style="font-size:40px" id="waktu"></div>
+					</td>
+				</tr>
+				<tr rowspan="3">
+					<td colspan="2">Melalui: 
+						<div id="jalan"></div>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">Terakhir update 
+						<div id="lastUpdate">12:00</div>
+					</td>
+				</tr>
+			</table>
+		</form>
+		
+		</div>
+		<!-- end of content -->
+
+	<script type="text/javascript">	
+		var directionsService;
+		var x = document.getElementById('waktu');
+		var y = document.getElementById('jalan');
+		var z = document.getElementById('lastUpdate');
+		
+		function initialize() {
+		    directionsService = new google.maps.DirectionsService;
+			
+		    var work = document.getElementById('workAddress');
+		    var home = document.getElementById('homeAddress');
+		   
+		    var autocomplete = new google.maps.places.Autocomplete(work);
+			var infowindow = new google.maps.InfoWindow();
+			autocomplete.addListener('place_changed', function() {
+			    infowindow.close();
+			    var place = autocomplete.getPlace();
+			    if (!place.geometry) {
+					window.alert("Autocomplete's returned place contains no geometry");
+					return;
+			    }
+			    var address = '';
+			    if (place.address_components) {
+					address = [
+					(place.address_components[0] && place.address_components[0].short_name || ''),
+					(place.address_components[1] && place.address_components[1].short_name || ''),
+					(place.address_components[2] && place.address_components[2].short_name || '')
+					].join(' ');
+				}
+				infowindow.setContent('<div><strong>' + place.name + '</strong><br>' + address);
+			});
+			
+			var autocomplete2 = new google.maps.places.Autocomplete(home);
+			var infowindow2 = new google.maps.InfoWindow();
+			autocomplete2.addListener('place_changed', function() {
+			    infowindow2.close();
+			    var place = autocomplete2.getPlace();
+			    if (!place.geometry) {
+					window.alert("Autocomplete's returned place contains no geometry");
+					return;
+			    }
+			    var address = '';
+			    if (place.address_components) {
+					address = [
+					(place.address_components[0] && place.address_components[0].short_name || ''),
+					(place.address_components[1] && place.address_components[1].short_name || ''),
+					(place.address_components[2] && place.address_components[2].short_name || '')
+					].join(' ');
+				}
+				infowindow2.setContent('<div><strong>' + place.name + '</strong><br>' + address);
+			});
+		}
+		
+		function calcRoute(){
+			var melalui = "";
+			var jarak = 0;
+			var durasi = "";
+			var lastUpdate;
+			var start = document.getElementById('workAddress').value;
+			var end = document.getElementById('homeAddress').value;
+			var request = {
+			  origin: start,
+			  destination: end,
+			  travelMode: 'DRIVING',
+			  language: 'Indonesian',
+			  drivingOptions: {
+				departureTime: new Date(Date.now()),
+				trafficModel: 'optimistic',
+			  }
+			};
+			
+			directionsService.route(request, function(response, status) {
+				console.log(response);
+				if (status == "OK") {
+					var durasiTemp = response.routes[0].legs[0].duration.text.split(" ");
+					for(i = 1; i < durasiTemp.length; i+=2){
+						if(durasiTemp[i] == "day" || durasiTemp[i] == "days"){
+							durasi += durasiTemp[i-1] + " Hari ";
+						} else if(durasiTemp[i] == "hour" || durasiTemp[i] == "hours"){
+							durasi += durasiTemp[i-1] + " Jam ";
+						} else if(durasiTemp[i] == "min" || durasiTemp[i] == "mins"){
+							durasi += durasiTemp[i-1] + " Menit ";
+						}
+					}
+					var jarakTemp = response.routes[0].legs[0].distance.text.split(" ")[0];
+					jarak = jarakTemp;
+					var steps = response.routes[0].legs[0].steps;
+					var routes = [];
+					for (i = 0; i < steps.length; i++) {
+						var temp = steps[i].instructions;
+						for(j = 0; j < temp.length-6; j++){
+							if(temp.substring(j,(j+6))=="<b>Jl."){
+								if(j>6 && temp.substring(j-7,j-1)=="toward"){
+								} else{
+									var temp2 = temp.substring(j);
+									for(k = 0; k < (temp2.length)-4 ; k++){
+										if(temp2.substring(k,k+4) == "</b>"){
+											var jalan = temp.substring(j+3,j+k);
+											var isAvailable = 0;
+											for(l = 0; l < routes.length; l++){
+												if(routes[l] == jalan){
+													isAvailable = 1;
+												}
+											}
+											if(isAvailable == 0){
+												routes.push(jalan);
+											}
+											j = j+k+1;
+											k = temp2.length;
+										}
+									}
+								}
+							}
+						}
+					}
+					for(i = 0; i < routes.length; i++){
+						melalui += routes[i]+ ", ";
+					}
+					console.log(routes);
+					x.innerHTML = durasi + " / " + jarak + " KM";
+					y.innerHTML = melalui;
+					
+				}
+			});
+			
+		}
+
+	</script>
+    <!-- footer -->
+    <div class="modal-footer">
+			Copyright &copy 2016 | Universitas Katolik Parahyangan
+		</div>
+		<!-- end of footer -->
+	</body>
+</html>
